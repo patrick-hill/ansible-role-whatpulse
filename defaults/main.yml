@@ -1,0 +1,6 @@
+---
+whatpulse_link: https://whatpulse.org/downloads/{{ whatpulse_build_version }}/64bit/
+whatpulse_download_file: what-pulse_{{ whatpulse_build_version}}.tar.gz
+whatpulse_install_dir: /opt/whatpulse/build-{{ whatpulse_build_version }}
+
+os_username: "{{ lookup('env','USER') }}"

@@ -1,0 +1,82 @@
+---
+- name: Check if installed
+  stat: path="{{ whatpulse_install_dir }}"
+  register: installed
+  changed_when: not installed.stat.exists
+
+- block:
+
+  - name: Download archive
+    get_url:
+      url: "{{ whatpulse_link }}"
+      dest: "/tmp/{{ whatpulse_download_file }}"
+      validate_certs: False
+    register: download
+
+  - name: Creates install directory
+    file: path="{{ whatpulse_install_dir }}" state=directory recurse=yes
+    become: yes
+    when: download|changed
+
+  - name: Extract archive
+    unarchive:
+      src: "/tmp/{{ whatpulse_download_file }}"
+      dest: "{{ whatpulse_install_dir }}"
+      copy: no
+    become: yes
+    when: download|changed
+
+  - name: Remove archive
+    file:
+      path: "/tmp/{{ whatpulse_download_file }}"
+      state: absent
+
+  - name: Install dependencies
+    apt: pkg={{ item }} state=installed
+    with_items:
+      - openssl
+      - libqtcore4
+      - libqtwebkit4
+      - libqt4-sql
+      - libqt4-sql-sqlite
+      - libssl-dev
+      - libqtscript4-core
+      - libqtscript4-gui
+      - libqtscript4-network
+      - libqtscript4-webkit
+      - libpcap0.8
+      - libpcapnav0
+    become: yes
+
+  - name: Copy My Interactive Permissions Setup Script
+    copy:
+      src: setup-input-permissions-enhanced.sh
+      dest: "{{ whatpulse_install_dir }}/setup-input-permissions-enhanced.sh"
+      mode: "a+x"
+    become: yes
+
+  - name: Input Permissions Setup (Non-Interactive)
+    shell: "{{ whatpulse_install_dir }}/setup-input-permissions-enhanced.sh true {{ os_username }}"
+    become: yes
+
+  - name: Symlink executable
+    file:
+      src: "{{ whatpulse_install_dir }}/whatpulse"
+      dest: /usr/local/bin/whatpulse
+      state: link
+      force: yes
+    become: yes
+
+  - name: Desktop File
+    copy:
+      src: whatpulse.desktop
+      dest: /usr/share/applications/whatpulse.desktop
+      mode: 0644
+    become: yes
+
+# Only required for client versions < 2.1 as per: http://help.whatpulse.org/kb/client/linux-installation
+# - name: netcp setup
+#   shell: setcap cap_net_raw,cap_net_admin=eip /opt/whatpulse/whatpulse
+#   become: yes
+
+  when: not installed.stat.exists

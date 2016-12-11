@@ -1,0 +1,12 @@
+---
+- name: Include OS specific vars (Ubuntu)
+  include_vars: "ubuntu.yml"
+  when: ansible_distribution in [ "Ubuntu", "Linuxmint" ]
+
+- name: Include OS specific vars (Debian)
+  include_vars: "ubuntu.yml"
+  when: ansible_distribution == "Debian"
+
+- name: Install WhatPulse (Debian)
+  include: "debian.yml"
+  when: ansible_os_family in [ "Debian", "Linuxmint" ]
